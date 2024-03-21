@@ -1,0 +1,182 @@
+/* Some fonts i'd like to include */
+
+@font-face {
+  font-family : beyondFont;
+  src : url(fonts/Beyonders.ttf);
+}
+
+@font-face {
+  font-family : NexaFont;
+  src : url(fonts/Nexa-ExtraLight.ttf);
+
+}
+
+
+/*****************************************************************/
+/* Basic stuff, including Banner and Logo */
+
+*{
+  margin : 0;
+  padding : 0;
+  font-family : nexaFont;
+}
+
+.body-content {
+  display: flex;
+}
+
+.banner {
+  width :100%;
+  height : 100vh;
+  background-image : linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.3)), url(img/Background.png);
+  background-size : cover;
+  background-position : center;
+}
+
+.content-container {
+  width : 50%;
+  padding : 20px;
+}
+
+.logo {
+  width : 300px;
+  margin-right : auto;
+  cursor : pointer;
+  padding: 10px ;
+
+  border-style : groove ;
+  border-right : 1px ;
+  border-top : 1px ;
+  border-color :rgb(199, 160, 207) ;
+}
+
+
+/*****************************************************************/
+/* Navigation Bar */
+
+
+.navbar{
+
+  width : 95%;
+  margin : auto;
+  padding : 35px 0;
+  display : flex;
+  align-items : center;
+  justify-content : space-between;
+
+}
+
+  .navbar ul li {
+
+    list-style : none;
+    display : inline-block;
+    margin : 0 50px;
+    position : relative;
+
+  }
+
+  .navbar ul li a{
+
+    font-family :beyondFont;
+    font-size : 15px;
+    text-decoration : none;
+    color : #fff;
+
+  }
+
+  .navbar ul li::after {
+
+    content : '';
+    height : 3px;
+    width : 0;
+    background : rgb(199, 160, 207);
+    position : absolute;
+    left : 0;
+    bottom : -10px;
+    transition : 0.2s;
+
+  }
+
+  .navbar ul li:hover::after {
+
+    width :100%;
+
+  }
+
+
+
+/*****************************************************************/
+/* Website Messages */
+
+h2 {
+
+
+  margin :  20px;
+  font-size : 30px;
+  color : #fff;
+  position: absolute;
+  top: 2.5%;
+  left : 52.5%;
+  text-align : center;
+}
+
+p {
+  margin : 20px;
+  font-size : 20px;
+  color : #fff;
+  width : 500px;
+}
+
+#codeImage {
+  width: 400px ;
+  transform : translate(+140%, -50%) ;
+  position: absolute;
+  padding: 5px ;
+
+  border-style : groove ;
+  border-left : 0 ;
+  border-bottom : 0 ;
+  border-color :rgb(199, 160, 207) ;
+}
+
+/*****************************************************************/
+/* Form */
+
+
+.game-form {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(+7%, -780%);
+  padding: 20px;
+  border-radius: 10px;
+
+}
+
+#nameForm label {
+  color: #fff;
+  font-size : 20px;
+  margin : 30px;
+}
+
+#nameForm {
+  margin : 30px;
+}
+
+
+#submitButton {
+
+  width: 100px;
+  border-radius: 25px ;
+
+
+}
+/*****************************************************************/
+/* Canvas */
+
+
+
+canvas {
+  background-color : #000000;
+}
+

@@ -1,0 +1,618 @@
+<!------------------------------------------------------------------------------------->
+<!------------------------------------------------------------------------------------->
+<!-- Beginning of HMTL -->
+
+
+<!DOCTYPE html>
+
+<html>
+    <head>
+
+        <!------------------------------------------------------------------------------------->
+        <!-- My CSS link-->
+
+        <link rel="stylesheet" type="text/css" href="falling_stuff.css">
+        <meta http-equiv="Content-Type"
+        content="text/html; charset=utf-8" >
+
+         
+
+    </head>
+
+    <body style="background-color: rgb(53, 53, 53);">
+
+    <body>
+
+        <div class="body-content">
+
+            <div class ="banner">
+
+                    <!------------------------------------------------------------------------------------->
+                    <!-- Navigation Bar-->
+                    <div class="navbar">
+                        <img src="img/mylogo.png" class="logo">
+                        <ul>
+                            <li><a href="">Home</a></li>
+                            <li><a href="">My CV</a></li>
+                            <li><a href="">Game</a></li>
+                        </ul>
+                    </div>
+                    
+                    <!------------------------------------------------------------------------------------->
+                    <!-- Introduction and basic text on the front of the page-->
+                    
+                    
+
+                    <p id="mainMessage">
+
+                        This is an assignment project. Initially i started with creating a template and was asked to create a game using a Canvas. I added my own Cascading style sheet so that i
+                        could create the game on a website i was happy with, as i intend to add this to my personal Uni website when it is finished. There will eventually be three links above, one to
+                        my home page, one to my CV and one to this game. All assets have been found online and sourced in my Readme or made by me. 
+
+                    </p>
+                    
+                    <!-- Stylistic image of code -->
+
+                    <img id="codeImage" src="img/code.png">
+
+                    <!------------------------------------------------------------------------------------->
+                    <!-- Form for enterring your name, i've decided to put it Over the Canvas-->
+                    <form id="nameForm" class="game-form" onsubmit="return false;">
+                        <input type="text" id="userName" name="userName" required>
+                        <input type="hidden" id="userScore" name="userScore" value="0">
+                        <input id="submitButton" type="button" value="Submit" onclick="falling_stuff_namespace.startGameWithUser()">
+                    </form>
+
+
+                <h2 id="formMessage">Enter your name</h2>
+
+            </div>
+            
+            <canvas id="game_canvas" width="900" height="900" style="border:1px dotted"></canvas>
+
+        </div>
+        
+        
+
+    </body>
+    
+    
+    <!------------------------------------------------------------------------------------->
+    
+
+<script>
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Canvas code
+
+        // Use a function to hide all the identifiers except start_game and stop_game
+        const falling_stuff_namespace = function () { 
+
+        // A canvas and a canvas context to let us draw stuff 
+        const canv=document.getElementById("game_canvas");
+        const ctx=canv.getContext("2d");
+        const canv_bounding_box = canv.getBoundingClientRect();
+
+        // Event listener calls move when the canvas is clicked 
+        canv.addEventListener("mousemove", move ,false);
+        canv.addEventListener("click", fire ,false);
+
+        // Creating code to track the cursor, so i can stick the cursor to the canvas when the game >
+        // > is being played
+
+        var cursorX; 
+
+        function trackCursor(event) {
+
+            cursorX = event.clientX - canv.getBoundingClientRect().left;
+        }
+
+        canv.addEventListener("mousemove", trackCursor, false);
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Reset code
+
+
+        function resetCanvas() {
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canv.width, canv.height);
+
+             // Reset player position and size
+            me = new Box(canv.width/2, canv.height-60, 50, 40, "img/ship.gif" );
+
+            //Reset player Image
+            me.image = new Image();
+            me.image.src = "img/ship.gif";
+
+            // Clear the array of falling boxes and Bullets
+            the_falling_boxes.falling_boxes = [];
+            bullets = [];
+
+            // Reset enemies image
+            for (let i = 0; i < the_falling_boxes.falling_boxes.length; i++) {
+                the_falling_boxes.falling_boxes[i].image = new Image();
+                the_falling_boxes.falling_boxes[i].image.src = "img/badship.gif";
+            }
+
+            // Show the form
+            document.getElementById("nameForm");
+
+            // Resetting the rest of the variables and other things
+            initialSpeed = 1;
+            speedIncrement = 0.1;
+            timePassed = 0;
+            score = 0;
+
+   
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Box class Constructor (Used for the Player)
+
+        function Box(x, y, width, height, imageSrc) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.image = new Image();
+            this.image.src =imageSrc;
+            this.draw = function (ctx) { // a method
+                ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                    
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Creating the player model using me as the variable and the Box constructor, and some other >
+        // > player related code.
+
+        var me = new Box(canv.width/2, canv.height-60, 58, 79, "img/ship.gif" );
+
+        // Code for creating a welcome user message using the player's given name
+
+		 let playerName = "";
+
+                function startGameWithUser() {
+                    playerName = document.getElementById("userName").value;
+                    document.getElementById("nameForm").style.display = "none";
+                    document.getElementById("formMessage").innerHTML = `${playerName}`;
+                    document.getElementById("userScore").value = score; // Update the hidden input with the current score
+                    start_game();
+                }
+
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Move calculates a new x position for the player
+        
+
+
+        function move(e) {
+            e.preventDefault();
+            var canvasBoundingRect = canv.getBoundingClientRect();
+            cursorX = e.clientX - canvasBoundingRect.left;
+            
+            // Ensure the player stays within the canvas bounds
+            me.x = Math.max(0, Math.min(canvasBoundingRect.width - me.width, cursorX - me.width / 2));
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Fire adds a bullet 
+
+        let lastBulletTime = 0; 
+        var bulletCooldown = 500;
+        var bulletSpeedIncrease = 0; 
+
+        function fire(e) {
+            e.preventDefault();
+
+            const currentTime = new Date().getTime();
+            const timeSinceLastBullet = currentTime - lastBulletTime;
+
+            if (timeSinceLastBullet > bulletCooldown) {
+                bullets.push( new bullet( me.x + me.width / 3, me.y-20, -3, 5, "img/laser.gif" ));
+                lastBulletTime = currentTime;
+            }
+
+    
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Collision code
+
+        function collisionDetected(obj1, obj2) {
+            var hitboxDecrease = 10; 
+
+            // Decrease the hitbox size
+
+            var obj1WithDecreasedHitbox = {
+                x: obj1.x + hitboxDecrease / 2,
+                y: obj1.y + hitboxDecrease / 2,
+                width: obj1.width - hitboxDecrease,
+                height: obj1.height - hitboxDecrease
+            };
+
+            // Check for collision with the decreased hitbox
+
+            var decreasedCollision = (
+                obj1WithDecreasedHitbox.x < obj2.x + obj2.width &&
+                obj1WithDecreasedHitbox.x + obj1WithDecreasedHitbox.width > obj2.x &&
+                obj1WithDecreasedHitbox.y < obj2.y + obj2.height &&
+                obj1WithDecreasedHitbox.y + obj1WithDecreasedHitbox.height > obj2.y
+            );
+
+            return decreasedCollision;
+        }
+
+        // Function to telll if the player has been hit by a ship and thus should end the game
+
+        function was_i_hit(some_falling_box) {
+            if (
+                some_falling_box.type !== "powerUp" &&
+                (
+                    some_falling_box.left <= (me.x + me.width) &&
+                    some_falling_box.right >= me.x &&
+                    some_falling_box.top <= (me.y + me.height) &&
+                    some_falling_box.bottom >= me.y
+                )
+
+            ) {
+                // Falling box is not of type "powerUp" and hits the player
+
+                stop_game();
+
+            } else if (some_falling_box.type === "powerUp" &&
+                (
+                    some_falling_box.left <= (me.x + me.width) &&
+                    some_falling_box.right >= me.x &&
+                    some_falling_box.top <= (me.y + me.height) &&
+                    some_falling_box.bottom >= me.y
+                )) {
+
+                PowerUpCollision(some_falling_box);
+
+            }
+        }
+
+        // Function that increases the power of the player when they hit a powerup 
+
+
+        function PowerUpCollision(some_falling_box) {
+
+            if (bulletCooldown > 100) { 
+
+                const fireSpeedDecrease = 100 ;
+                bulletCooldown = bulletCooldown -  fireSpeedDecrease ; 
+                bulletSpeedIncrease = bulletSpeedIncrease + 0.5 ; 
+
+            } else {
+
+                bulletSpeedIncrease = bulletSpeedIncrease + 2 ; 
+            }
+
+            
+
+             const index = the_falling_boxes.falling_boxes.indexOf(some_falling_box);
+            if (index !== -1) {
+                the_falling_boxes.falling_boxes.splice(index, 1);
+            }
+        }
+        
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Constructor for creating new falling boxes 
+
+        function Falling_box( x, y, dy, mass, imageSrc, type ) {
+
+            this.x = x;
+            this.y = y;
+            this.dy = dy;
+            this.mass = mass;
+
+            this.type = type;
+            this.height = 74;
+            this.width = 58;
+
+
+            this.top =this.y;
+            this.bottom = this.y + this.height;
+            this.left = this.x;
+            this.right = this.x + this.width;
+
+            this.image = new Image();
+            this.image.src = imageSrc;
+    
+
+            this.update_position = function () {
+
+                this.y += dy ;
+                this.top = this.y;
+                this.bottom = this.y + this.height;
+
+            },
+
+            this.draw = function ( context ) {
+
+                context.drawImage(this.image, this.x, this.y, this.width, this.height);
+
+            }
+            
+        }
+
+
+        function bullet(x, y, dy, mass, imageSrc) {
+
+            this.x = x;
+            this.y = y;
+            this.dy = dy ;
+            this.mass = mass;
+
+            this.height = 20;
+            this.width = 20;
+            this.top =this.y;
+            this.bottom = this.y + this.height;
+            this.left = this.x;
+            this.right = this.x + this.width;
+
+            this.image = new Image();
+            this.image.src = imageSrc;
+
+            this.update_position = function () {
+
+                this.y += -1 - bulletSpeedIncrease ;
+                this.top = this.y;
+                this.bottom = this.y + this.height;
+
+            },
+
+            this.draw = function ( context ) {
+
+                context.drawImage(this.image, this.x, this.y, this.width, this.height);
+
+            }
+
+        } 
+
+  
+
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Creating falling boxes Variables as well as arrays
+
+        var initialSpeed = 1;
+        var speedIncrement = 0.2;
+        var timePassed = 0;
+        var bullets = [];
+
+        var the_falling_boxes = { 
+
+
+            // An empty array to store falling_boxes 
+            
+            falling_boxes: [],
+
+            // Create a falling_box and add it to the array of falling_boxes 
+
+            add_powerup : function () {
+
+                var x = Math.random() * canv.width
+                var x = Math.random() * canv.width ;
+                var y = Math.random() * (canv.height/10) ;
+                var dy = initialSpeed + speedIncrement ;
+                var mass = (Math.random() * 5) + 1 ; 
+
+                this.falling_boxes.push( new Falling_box(x, y, dy, mass, "img/powerup.gif", "powerUp") ) 
+
+            },
+
+
+            add_random_falling_box: function () {
+
+                var x = Math.random() * canv.width ;
+                var y = Math.random() * (canv.height/10) ;
+                var dy = initialSpeed + speedIncrement * timePassed;
+                var mass = (Math.random() * 5) + 1;
+
+                this.falling_boxes.push( new Falling_box( x, y, dy, mass, "img/badship.gif") )
+            },
+
+            maybe_add_random_falling_box: function ( how_likely_box, how_likely_powerUp) {
+                var maybe = Math.random();
+                if ( maybe < how_likely_box) {
+                    this.add_random_falling_box()
+                }
+
+                if (maybe < how_likely_powerUp) { 
+                    this.add_powerup() 
+                }
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Creating our stary background
+
+        const numStars = 100; 
+        const stars = [];
+        const maxSpeed = 3;
+
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: Math.random()*canv.width,
+                y: Math.random()*canv.height,
+                speed: Math.min(maxSpeed, i + Math.random() * 3),
+            })
+        }
+
+        function updateStars() { 
+            for (let i = 0; i < stars.length; i++) { 
+                stars[i].y += stars[i].speed;
+
+                if (stars[i].y > canv.height) {
+                    stars[i].y = 0; 
+                }
+            }
+        }
+
+        function drawStars() { 
+            ctx.fillStyle = "white";
+
+            for (let i = 0; i < stars.length; i++) { 
+                ctx.fillRect(stars[i].x, stars[i].y, 2, 2);
+            }
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Keeping Score
+
+        var score = 0;
+        var scoreInterval;
+
+        function increaseScore() {
+            score++;
+        }
+
+        async function save_score(score) {
+
+            const name = document.getElementById("userName").value;
+
+            const response = await fetch(`submit_score.php?name=${name}&score=${score}`, {
+                method: 'GET'
+            })
+
+            console.log(response.body) ;
+        
+        }
+
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Game Interval code (60FPS) , Canvas drawing code
+
+        var game_interval;
+
+        function start_game() {
+
+            console.log("Game started!");
+            
+            game_interval = setInterval(game_loop, 8);
+            
+        }
+
+        function draw_everything() {
+
+
+            // First thing to do each frame is clear the canvas
+            ctx.clearRect(0, 0, canv.width, canv.height);
+
+            // Drawing the stars
+            drawStars();
+
+            //Draw the player
+            me.draw(ctx);
+
+
+            // Draw all the falling_boxes 
+
+            for (i=0; i<the_falling_boxes.falling_boxes.length; i++) {
+                the_falling_boxes.falling_boxes[i].draw(ctx);
+            }
+
+            // Draw all of the bullets
+
+            for (let j = 0; j < bullets.length; j++) {
+                bullets[j].draw(ctx);
+            }           
+
+            //Display the Score
+            ctx.fillStyle = "white";
+            ctx.font = "30px nexaFont";
+            ctx.fillText("Score : " + score, 10, 30);
+
+
+
+
+        }
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Game loop code
+
+        function game_loop() {
+            
+            var i;
+            var j;
+            timePassed += 0.016;
+
+            // Update the background stars
+            updateStars();
+
+            // Check for collisions with bullets
+            for (let j = 0; j < bullets.length; j++) {
+                for (let i = 0; i < the_falling_boxes.falling_boxes.length; i++) {
+                    const currentBullet = bullets[j];
+                    const currentFallingBox = the_falling_boxes.falling_boxes[i];
+
+                    if (
+                        collisionDetected(currentBullet, currentFallingBox) &&
+                        currentFallingBox.type !== "powerUp"
+                    ) {
+                        // Collision detected with a non-powerUp falling box, remove bullet and falling box
+                        bullets.splice(j, 1);
+                        the_falling_boxes.falling_boxes.splice(i, 1);
+                        // Decrease i to account for the removed falling box
+                        i--;
+                        // Get one point
+                        increaseScore();
+                    }
+                }
+            }
+
+            // Update bullet positions and remove bullets that have gone off the canvas
+            for (j = 0; j < bullets.length; j++) {
+                bullets[j].update_position();
+                if (bullets[j].y < 0) {
+                    bullets.splice(j, 1);
+                }
+            }
+
+            // Randomly add some new falling boxes
+            the_falling_boxes.maybe_add_random_falling_box(0.05, 0.0005);
+            for (i = 0; i < the_falling_boxes.falling_boxes.length; i++) {
+                the_falling_boxes.falling_boxes[i].update_position();
+                if (
+                    the_falling_boxes.falling_boxes[i].dy == 0 ||
+                    the_falling_boxes.falling_boxes[i].y > canv.height
+                ) {
+                    the_falling_boxes.falling_boxes.splice(i, 1);
+                    // Decrease i to account for the removed falling box
+                    i--;
+                }
+            }
+            for (i = 0; i < the_falling_boxes.falling_boxes.length; i++) {
+                was_i_hit(the_falling_boxes.falling_boxes[i]);
+            }
+
+            draw_everything();
+        }
+
+
+
+        /////////////////////////////////////////////////////////////////////////////////////
+        // Stop Game Function 
+
+        function stop_game() {
+            save_score(score) ; 
+            resetCanvas() ;
+            setTimeout(function() {
+                location.reload();
+            }, 250);
+        }
+
+        return { // an object with two attributes, start_game whose value is the function (method) start_game() and stop_game whose value is stop_game()
+        	startGameWithUser: startGameWithUser,
+            start_game: start_game,
+            stop_game: stop_game
+        }
+    }() // execute the anonymous function in order to return the object with attributes start_game and stop_game, which is assigned to falling_stuff_namespace
+
+</script>
+</body>
+</html>
